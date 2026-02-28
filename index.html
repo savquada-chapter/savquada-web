@@ -1227,10 +1227,10 @@ function renderHeroStats(statsRows, eventsRows) {
     const count  = row ? parseInt(row.stat_value) || 0 : 0;
 
     let classification;
-    if      (count >= 500) classification = 'Super';
-    else if (count >= 150) classification = 'Master';
-    else if (count >= 75)  classification = 'Senior';
-    else                   classification = 'AAAA';
+    if      (count >= 500) classification = 'Super Chapter';
+    else if (count >= 150) classification = 'Master Chapter';
+    else if (count >= 75)  classification = 'Senior Chapter';
+    else                   classification = 'AAAA Chapter';
 
     classEl.textContent = classification;
 
