@@ -1607,7 +1607,7 @@ function renderHeroStats(statsRows, eventRows) {
   if (el && totalRow) el.textContent = totalRow.stat_value;
 
   // 12-month growth
-  const growthRow = statsRows ? statsRows.find(r => r.stat_key === 'growth_12mo_pct' && isTrue(r.display_on_site)) : null;
+  const growthRow = statsRows ? statsRows.find(r => r.stat_key === 'growth_pct' && isTrue(r.display_on_site)) : null;
   const gel = document.getElementById('heroGrowth');
   if (gel && growthRow) gel.textContent = '+' + growthRow.stat_value + '%';
 
@@ -1732,12 +1732,12 @@ function renderStats(rows) {
   if (accEl && acc) accEl.textContent = acc;
 
   const barKeys = [
-    { key: 'cat_army_active_duty',  label: 'Army Active Duty',  style: '' },
-    { key: 'cat_civilian',          label: 'Civilian',          style: 'gold' },
-    { key: 'cat_defense_industry',  label: 'Defense Industry',  style: 'dim' },
-    { key: 'cat_national_guard',    label: 'National Guard',    style: 'dim' },
-    { key: 'cat_air_force',         label: 'Air Force',         style: 'dim' },
-    { key: 'cat_student',           label: 'Student',           style: 'dim' },
+    { key: 'army_active',    label: 'Army Active Duty',  style: '' },
+    { key: 'civilian',       label: 'Civilian',          style: 'gold' },
+    { key: 'industry',       label: 'Defense Industry',  style: 'dim' },
+    { key: 'national_guard', label: 'National Guard',    style: 'dim' },
+    { key: 'air_force',      label: 'Air Force',         style: 'dim' },
+    { key: 'student',        label: 'Student',           style: 'dim' },
   ];
 
   const totalNum = parseInt(total) || 1;
@@ -2098,7 +2098,7 @@ function renderBoard(rows) {
     const email    = r.chapter_email || r.personal_email || '';
     const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
     const emailBtn = email && !email.includes('[PENDING]')
-      ? `<a href="mailto:${email}" class="leader-email">${email} →</a>`
+      ? `<a href="/cdn-cgi/l/email-protection#10346b757d71797c6d" class="leader-email">${email} →</a>`
       : '';
     return `
     <div class="leader-card ${primary}">
@@ -2127,7 +2127,3 @@ function renderBoard(rows) {
   if (awards) renderAwards(awards);
   if (stats)  renderStats(stats);
   if (events) renderEvents(events);
-})();
-</script>
-</body>
-</html>
