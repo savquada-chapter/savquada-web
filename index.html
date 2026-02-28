@@ -1565,15 +1565,21 @@ const MONTHS_LONG = ['January','February','March','April','May','June','July','A
 
 function parseDate(str) {
   if (!str) return null;
-  // Handle M/D/YYYY or MM/DD/YYYY (Google Sheets default export)
-  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (slashMatch) {
-    return new Date(parseInt(slashMatch[3]), parseInt(slashMatch[1])-1, parseInt(slashMatch[2]));
+  str = str.trim();
+  // gviz format: Date(2026,2,19) — month is 0-indexed
+  const gvizMatch = str.match(/^Date\((\d{4}),(\d{1,2}),(\d{1,2})\)$/);
+  if (gvizMatch) {
+    return new Date(parseInt(gvizMatch[1]), parseInt(gvizMatch[2]), parseInt(gvizMatch[3]));
   }
-  // Handle YYYY-MM-DD (ISO)
+  // YYYY-MM-DD
   const dashMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
   if (dashMatch) {
     return new Date(parseInt(dashMatch[1]), parseInt(dashMatch[2])-1, parseInt(dashMatch[3]));
+  }
+  // M/D/YYYY or MM/DD/YYYY
+  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    return new Date(parseInt(slashMatch[3]), parseInt(slashMatch[1])-1, parseInt(slashMatch[2]));
   }
   return null;
 }
@@ -1864,7 +1870,10 @@ function renderBoard(rows) {
   if (board)  renderBoard(board);
   if (awards) renderAwards(awards);
   if (stats)  renderStats(stats);
-  if (events) renderAnnounceBar(events);
+  if (events) {
+    console.log('[CMS] Raw event dates:', events.map(r => r.date));
+    renderAnnounceBar(events);
+  }
   renderHeroStats(stats, events);
   if (events) renderEvents(events);
 })();
