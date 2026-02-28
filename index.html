@@ -40,65 +40,6 @@ body {
 img { max-width: 100%; display: block; }
 a { text-decoration: none; }
 
-/* ── ANNOUNCE BAR ── */
-#announceBar {
-  background: var(--navy);
-  border-bottom: 1px solid rgba(200,160,74,0.25);
-  overflow: hidden;
-  height: 32px;
-  display: flex;
-  align-items: center;
-}
-#announceInner {
-  display: flex;
-  align-items: center;
-  white-space: nowrap;
-  animation: ticker 28s linear infinite;
-  padding-left: 100%;
-  gap: 0;
-}
-#announceInner:hover { animation-play-state: paused; }
-.announce-item {
-  font-family: 'Barlow Condensed', sans-serif;
-  font-size: 11px;
-  font-weight: 600;
-  letter-spacing: 0.18em;
-  text-transform: uppercase;
-  color: rgba(255,255,255,0.7);
-  white-space: nowrap;
-  padding: 0 2.5rem;
-}
-.announce-badge {
-  display: inline-flex;
-  align-items: center;
-  background: var(--gold);
-  color: var(--navy);
-  font-size: 9px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  padding: 2px 6px;
-  margin-right: 8px;
-}
-.announce-badge.alert { background: #d94040; color: #fff; }
-.announce-sep {
-  color: var(--gold);
-  opacity: 0.5;
-  padding: 0 1rem;
-  font-size: 14px;
-}
-@keyframes ticker {
-  0%   { transform: translateX(0); }
-  100% { transform: translateX(-50%); }
-}
-
-/* Static fallback for when JS fills rotating items */
-#announceStatic {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  overflow: hidden;
-}
-
 /* ── NAV ── */
 nav {
   position: sticky;
@@ -229,7 +170,7 @@ nav {
 .mobile-menu {
   display: none;
   position: fixed;
-  top: 88px; /* nav + announce bar */
+  top: 56px; /* nav only */
   left: 0; right: 0;
   background: var(--navy);
   border-bottom: 2px solid var(--gold);
@@ -730,6 +671,55 @@ section { padding: 80px 60px; }
 }
 .news-excerpt { font-size: 13px; color: var(--ink-dim); line-height: 1.6; flex: 1; }
 
+/* ── VOLUNTEER ── */
+.vol-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 20px;
+}
+.vol-card {
+  background: #fff;
+  border: 1px solid var(--rule);
+  padding: 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.vol-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--navy);
+}
+.vol-desc {
+  font-size: 13px;
+  color: var(--ink-dim);
+  line-height: 1.6;
+  flex: 1;
+  margin: 0;
+}
+.vol-cta {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--gold);
+  margin-top: 4px;
+}
+.vol-cta:hover { color: var(--navy); }
+.vol-poc {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.10em;
+  text-transform: uppercase;
+  color: var(--ink-dim);
+  margin-top: 4px;
+}
+
 /* ── NEWSLETTER ── */
 #newsletter {
   background: var(--navy);
@@ -836,6 +826,7 @@ footer {
   .events-grid { grid-template-columns: 1fr 1fr; }
   .leadership-grid { grid-template-columns: 1fr 1fr; }
   .news-grid { grid-template-columns: 1fr 1fr; }
+  .vol-grid  { grid-template-columns: 1fr 1fr; }
 
   #newsletter { grid-template-columns: 1fr; gap: 32px; }
   footer { padding: 24px 32px; }
@@ -850,21 +841,6 @@ footer {
   .hamburger { display: flex; }
   .nav-brand { padding: 8px 16px; }
   .nav-brand-sub { display: none; }
-
-  /* Announce bar — no animation on mobile, static */
-  #announceBar { height: auto; min-height: 36px; padding: 0; }
-  #announceInner {
-    animation: none;
-    padding-left: 16px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    overflow-y: hidden;
-    -webkit-overflow-scrolling: touch;
-    scrollbar-width: none;
-  }
-  #announceInner::-webkit-scrollbar { display: none; }
-  .announce-item { padding: 8px 12px 8px 0; font-size: 10px; }
-  .announce-sep { display: none; }
 
   /* Hero */
   #hero { padding: 48px 20px; gap: 36px; }
@@ -883,6 +859,7 @@ footer {
 
   /* News */
   .news-grid { grid-template-columns: 1fr; }
+  .vol-grid  { grid-template-columns: 1fr; }
 
   /* Newsletter */
   #newsletter { padding: 48px 20px; }
@@ -903,16 +880,6 @@ footer {
 </head>
 <body>
 
-<!-- ── ANNOUNCE BAR ── -->
-<div id="announceBar" role="marquee" aria-label="Chapter announcements">
-  <div id="announceInner">
-    <span class="announce-item">
-      <span class="announce-badge">INFO</span>
-      SAVANNAH CHAPTER · AAAA · HUNTER ARMY AIRFIELD · SAVANNAH, GEORGIA
-    </span>
-  </div>
-</div>
-
 <!-- ── NAV ── -->
 <nav role="navigation" aria-label="Main navigation">
   <div class="nav-brand">
@@ -932,6 +899,7 @@ footer {
     <li><a href="#awards">Awards</a></li>
     <li><a href="#leadership">Leadership</a></li>
     <li><a href="#news">News</a></li>
+    <li><a href="#volunteer">Volunteer</a></li>
     <li><a href="#newsletter">Newsletter</a></li>
   </ul>
 
@@ -951,6 +919,7 @@ footer {
   <a href="#awards"     onclick="closeMobile()">Awards</a>
   <a href="#leadership" onclick="closeMobile()">Leadership</a>
   <a href="#news"       onclick="closeMobile()">News</a>
+  <a href="#volunteer"  onclick="closeMobile()">Volunteer</a>
   <a href="#newsletter" onclick="closeMobile()">Newsletter</a>
   <a href="https://www.quad-a.org/membership" class="mobile-cta" target="_blank" rel="noopener">Join / Renew →</a>
 </div>
@@ -1077,22 +1046,23 @@ footer {
     <span class="sec-eyebrow-text">Updates</span>
   </div>
   <h2 class="sec-title">Chapter News</h2>
-  <div class="news-grid">
-    <div class="news-card">
-      <div class="news-date">February 2026</div>
-      <div class="news-headline">Chapter Reaches 203 Members — 41% Growth in 12 Months</div>
-      <p class="news-excerpt">The Savannah Chapter has grown from 144 to 203 members since February 2025, driven by targeted outreach to active-duty units at Hunter AAF and Fort Stewart.</p>
-    </div>
-    <div class="news-card">
-      <div class="news-date">February 2026</div>
-      <div class="news-headline">OSM Nomination Cycle Now Open — Deadline 10 March</div>
-      <p class="news-excerpt">The Order of Saint Michael nomination cycle is open. Submit completed packets to the VP Awards via chapter Slack by 10 March. Templates available in the resources channel.</p>
-    </div>
-    <div class="news-card">
-      <div class="news-date">January 2026</div>
-      <div class="news-headline">Annual Awards Banquet Set for 22 March at Hunter AAF Officers Club</div>
-      <p class="news-excerpt">The Annual Awards Banquet and OSM Ceremony is confirmed for 22 March at 1900. RSVPs required. Formal military dress or civilian equivalent. Details distributed via Slack and email.</p>
-    </div>
+  <div class="news-grid" id="newsGrid">
+    <div class="cms-loading">Loading…</div>
+  </div>
+</section>
+
+<!-- ── VOLUNTEER ── -->
+<section id="volunteer" style="background:var(--off)">
+  <div class="sec-eyebrow">
+    <div class="sec-eyebrow-line"></div>
+    <span class="sec-eyebrow-text">Get Involved</span>
+  </div>
+  <h2 class="sec-title">Volunteer for the Chapter</h2>
+  <p style="font-size:14px;color:var(--ink-dim);max-width:560px;line-height:1.7;margin-bottom:40px">
+    The Savannah Chapter runs on volunteers. Below are active committees where your skills and time make a direct impact. Interested in serving? Reach out to the listed point of contact.
+  </p>
+  <div class="vol-grid" id="volGrid">
+    <div class="cms-loading">Loading…</div>
   </div>
 </section>
 
@@ -1124,12 +1094,10 @@ footer {
   <p class="footer-copy">© 2026 Savannah Chapter · AAAA · Hunter Army Airfield · Savannah, Georgia</p>
   <ul class="footer-links">
     <li><a href="https://www.quad-a.org" target="_blank" rel="noopener">AAAA National</a></li>
-    <li><a href="mailto:president@savquada.org">Contact</a></li>
-    <li><a href="#" onclick="return false;">Privacy</a></li>
   </ul>
 </footer>
 
-<script>
+<script data-cfasync="false" src="/cdn-cgi/scripts/5c5dd728/cloudflare-static/email-decode.min.js"></script><script>
 /* ══════════════════════════════════════════════
    HAMBURGER NAV
 ══════════════════════════════════════════════ */
@@ -1228,39 +1196,6 @@ function fmtDate(d) {
 }
 
 /* ══════════════════════════════════════════════
-   ANNOUNCE BAR
-══════════════════════════════════════════════ */
-function renderAnnounceBar(rows) {
-  const inner = document.getElementById('announceInner');
-  if (!inner) return;
-
-  const items = rows.filter(r =>
-    r.category && r.category.toLowerCase() === 'announcement' &&
-    isTrue(r.display_on_site)
-  );
-
-  if (!items.length) {
-    // Keep default static text already in HTML
-    return;
-  }
-
-  // Build items, duplicate for seamless loop
-  const makeItems = () => items.map(r => {
-    const urgency = (r.urgency || '').toLowerCase();
-    const badgeClass = urgency === 'high' ? 'alert' : '';
-    const badgeLabel = urgency === 'high' ? 'ALERT' : 'UPDATE';
-    return `<span class="announce-item"><span class="announce-badge ${badgeClass}">${badgeLabel}</span>${r.title || ''}</span><span class="announce-sep">·</span>`;
-  }).join('');
-
-  // Duplicate for infinite loop
-  inner.innerHTML = makeItems() + makeItems();
-
-  // Remove animation on mobile (set via CSS, but also remove padding-left)
-  if (window.innerWidth <= 640) {
-    inner.style.paddingLeft = '0';
-  }
-}
-
 /* ══════════════════════════════════════════════
    HERO STATS
 ══════════════════════════════════════════════ */
@@ -1520,6 +1455,81 @@ function renderBoard(rows) {
 }
 
 /* ══════════════════════════════════════════════
+   CHAPTER NEWS — Google Sheets: News tab
+   Columns: date (YYYY-MM-DD), headline, body, display_on_site
+══════════════════════════════════════════════ */
+function renderNews(rows) {
+  const grid = document.getElementById('newsGrid');
+  if (!grid) return;
+
+  if (!rows || !rows.length) {
+    grid.innerHTML = '<div class="cms-empty">No news items available.</div>';
+    return;
+  }
+
+  const visible = rows
+    .filter(r => isTrue(r.display_on_site))
+    .sort((a, b) => new Date(b.date || 0) - new Date(a.date || 0));
+
+  if (!visible.length) {
+    grid.innerHTML = '<div class="cms-empty">No news items available.</div>';
+    return;
+  }
+
+  grid.innerHTML = visible.map(r => {
+    const d = parseDate(r.date);
+    const label = d
+      ? d.toLocaleDateString('en-US', { month: 'long', year: 'numeric' })
+      : (r.date || '');
+    return `
+    <div class="news-card">
+      <div class="news-date">${label}</div>
+      <div class="news-headline">${r.headline || '—'}</div>
+      <p class="news-excerpt">${r.body || ''}</p>
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════
+   VOLUNTEERS — Google Sheets: Volunteers tab
+   Columns: committee, description, contact_name,
+            contact_email, display_on_site
+══════════════════════════════════════════════ */
+function renderVolunteers(rows) {
+  const grid = document.getElementById('volGrid');
+  if (!grid) return;
+
+  if (!rows || !rows.length) {
+    grid.innerHTML = '<div class="cms-empty">No volunteer opportunities listed.</div>';
+    return;
+  }
+
+  const visible = rows
+    .filter(r => isTrue(r.display_on_site))
+    .sort((a, b) => (parseInt(a.sort_order)||99) - (parseInt(b.sort_order)||99));
+
+  if (!visible.length) {
+    grid.innerHTML = '<div class="cms-empty">No volunteer opportunities listed.</div>';
+    return;
+  }
+
+  grid.innerHTML = visible.map(r => {
+    const hasEmail = r.contact_email && !r.contact_email.includes('[PENDING]');
+    const contactLine = hasEmail
+      ? `<a href="mailto:${r.contact_email}" class="vol-cta">Contact ${r.contact_name || 'POC'} →</a>`
+      : r.contact_name
+        ? `<span class="vol-poc">POC: ${r.contact_name}</span>`
+        : '';
+    return `
+    <div class="vol-card">
+      <div class="vol-title">${r.committee || '—'}</div>
+      <p class="vol-desc">${r.description || ''}</p>
+      ${contactLine}
+    </div>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════
    NEWSLETTER FORM
 ══════════════════════════════════════════════ */
 function handleNewsletterSubmit(e) {
@@ -1537,20 +1547,24 @@ function handleNewsletterSubmit(e) {
    BOOT — fetch all tabs in parallel
 ══════════════════════════════════════════════ */
 (async function initCMS() {
-  const [board, awards, stats, , events] = await Promise.all([
+  const [board, awards, stats, , events, news, volunteers] = await Promise.all([
     fetchSheet('Board'),
     fetchSheet('OSM_Awards'),
     fetchSheet('Stats'),
     fetchSheet('Monthly_Trend'),
     fetchSheet('Events'),
+    fetchSheet('News'),
+    fetchSheet('Volunteers'),
   ]);
 
-  if (board)  renderBoard(board);
-  if (awards) renderAwards(awards);
-  if (stats)  renderStats(stats);
-  if (events) renderAnnounceBar(events);
-  renderHeroStats(stats, events);
-  if (events) renderEvents(events);
+  if (board)      renderBoard(board);
+  if (awards)     renderAwards(awards);
+  if (stats)      renderStats(stats, events);
+  if (stats)      renderChartBars(stats);
+  if (events)     renderEvents(events);
+  if (events)     renderHeroStats(stats, events);
+  renderNews(news);
+  renderVolunteers(volunteers);
 })();
 </script>
 </body>
