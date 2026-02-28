@@ -949,6 +949,7 @@ footer {
   <a href="#events"     onclick="closeMobile()">Events</a>
   <a href="#strength"   onclick="closeMobile()">Chapter Strength</a>
   <a href="#awards"     onclick="closeMobile()">Awards</a>
+  <a href="#oll"        onclick="closeMobile()">OLL</a>
   <a href="#leadership" onclick="closeMobile()">Leadership</a>
   <a href="#news"       onclick="closeMobile()">News</a>
   <a href="#newsletter" onclick="closeMobile()">Newsletter</a>
@@ -1040,6 +1041,8 @@ footer {
       <button class="filter-btn" data-filter="Gold">Gold</button>
       <button class="filter-btn" data-filter="Silver">Silver</button>
       <button class="filter-btn" data-filter="Bronze">Bronze</button>
+      <button class="filter-btn" data-filter="Knight">Knight</button>
+      <button class="filter-btn" data-filter="OLL">OLL</button>
     </div>
   </div>
   <table class="awards-table" id="awardsTable">
@@ -1054,6 +1057,39 @@ footer {
       <tr><td colspan="3" class="cms-loading">Loading…</td></tr>
     </tbody>
   </table>
+</section>
+
+<!-- ── OLL AWARDS ── -->
+<section id="oll" style="background:var(--off);padding-top:0">
+  <div style="padding:0 60px 80px">
+    <div style="border-top:1px solid var(--rule);padding-top:56px">
+      <div class="sec-eyebrow">
+        <div class="sec-eyebrow-line"></div>
+        <span class="sec-eyebrow-text">Order of Our Lady of Loreto</span>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 2fr;gap:48px;align-items:start;margin-bottom:32px">
+        <div>
+          <h2 class="sec-title" style="margin-bottom:12px">OLL Recipients</h2>
+          <p style="font-size:13px;color:var(--ink-dim);line-height:1.7;max-width:340px">
+            Recognizes individuals who have contributed significantly on the home front in outstanding support of the Army Aviation Family and Community. Established jointly by AAAA and USAAVNC in 2004. Our Lady of Loreto has been the patron saint of aviators since 1920.
+          </p>
+        </div>
+        <div>
+          <table class="awards-table" id="ollTable">
+            <thead>
+              <tr>
+                <th>Recipient</th>
+                <th>Year</th>
+              </tr>
+            </thead>
+            <tbody id="ollBody">
+              <tr><td colspan="2" class="cms-loading">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
 </section>
 
 <!-- ── LEADERSHIP ── -->
@@ -1423,6 +1459,7 @@ const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV
 let _allAwards = [];
 
 function renderAwards(rows) {
+  // All award types including OLL
   _allAwards = rows.filter(r => isTrue(r.display_on_site));
   applyAwardsFilter('all');
 
@@ -1517,6 +1554,41 @@ function renderBoard(rows) {
 }
 
 /* ══════════════════════════════════════════════
+   OLL — Order of Our Lady of Loreto
+══════════════════════════════════════════════ */
+function renderOLL(rows) {
+  const tbody = document.getElementById('ollBody');
+  if (!tbody) return;
+
+  const ollRows = rows
+    .filter(r => isTrue(r.display_on_site) && (r.award_type||'').toLowerCase() === 'oll')
+    .sort((a,b) => (parseInt(b.year)||0) - (parseInt(a.year)||0));
+
+  if (!ollRows.length) {
+    tbody.innerHTML = '<tr><td colspan="2" class="cms-empty">No OLL recipients on record.</td></tr>';
+    return;
+  }
+
+  tbody.innerHTML = ollRows.map(r => {
+    const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
+    const yr = r.year || r.presentation_date?.slice(0,4) || '—';
+    return `
+    <tr>
+      <td>
+        <div style="display:flex;align-items:center;gap:10px">
+          <div style="width:10px;height:10px;border-radius:50%;background:var(--gold);flex-shrink:0"></div>
+          <div>
+            <div class="award-nm">${r.recipient_name || '—'}</div>
+            ${rankUnit ? `<div class="award-rnk">${rankUnit}</div>` : ''}
+          </div>
+        </div>
+      </td>
+      <td style="font-family:'Bebas Neue',sans-serif;font-size:16px;color:var(--navy-lt)">${yr}</td>
+    </tr>`;
+  }).join('');
+}
+
+/* ══════════════════════════════════════════════
    NEWSLETTER FORM
 ══════════════════════════════════════════════ */
 function handleNewsletterSubmit(e) {
@@ -1544,6 +1616,7 @@ function handleNewsletterSubmit(e) {
 
   if (board)  renderBoard(board);
   if (awards) renderAwards(awards);
+  if (awards) renderOLL(awards);
   if (stats)  renderStats(stats);
   if (events) renderAnnounceBar(events);
   renderHeroStats(stats, events);
