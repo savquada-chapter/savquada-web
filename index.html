@@ -602,6 +602,11 @@ section { padding: 80px 60px; }
   color: var(--navy-lt);
   margin-bottom: 14px;
 }
+.leader-avatar--photo {
+  object-fit: cover;
+  object-position: center top;
+  display: block;
+}
 
 .leader-role {
   font-family: 'Barlow Condensed', sans-serif;
@@ -1227,10 +1232,10 @@ function renderHeroStats(statsRows, eventsRows) {
     const count  = row ? parseInt(row.stat_value) || 0 : 0;
 
     let classification;
-    if      (count >= 500) classification = 'Super Chapter';
-    else if (count >= 150) classification = 'Master Chapter';
-    else if (count >= 75)  classification = 'Senior Chapter';
-    else                   classification = 'AAAA Chapter';
+    if      (count >= 500) classification = 'Super';
+    else if (count >= 150) classification = 'Master';
+    else if (count >= 75)  classification = 'Senior';
+    else                   classification = 'AAAA';
 
     classEl.textContent = classification;
 
@@ -1429,9 +1434,12 @@ function renderBoard(rows) {
     const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
     const emailBtn = email && !email.includes('[PENDING]')
       ? `<a href="mailto:${email}" class="leader-email">${email} →</a>` : '';
+    const avatar = r.photo_url
+      ? `<img src="${r.photo_url}" class="leader-avatar leader-avatar--photo" alt="${r.display_name || ''}">`
+      : `<div class="leader-avatar">${initials.toUpperCase()}</div>`;
     return `
     <div class="leader-card ${primary}">
-      <div class="leader-avatar">${initials.toUpperCase()}</div>
+      ${avatar}
       <div class="leader-role">${r.position || '—'}</div>
       <div class="leader-name">${r.display_name || '—'}</div>
       <div class="leader-rank">${rankUnit}</div>
