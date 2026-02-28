@@ -1171,7 +1171,9 @@ function parseCsvLine(line) {
 }
 
 function isTrue(val) {
-  return typeof val === 'string' && val.trim().toUpperCase() === 'TRUE';
+  if (typeof val === 'boolean') return val;
+  if (typeof val === 'string') return val.trim().toUpperCase() === 'TRUE';
+  return false;
 }
 
 /* ── DATE PARSING (handles gviz Date(), YYYY-MM-DD, M/D/YYYY) ── */
