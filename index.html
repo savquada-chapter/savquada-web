@@ -1609,7 +1609,7 @@ function renderHeroStats(statsRows, eventRows) {
   // 12-month growth
   const growthRow = statsRows ? statsRows.find(r => r.stat_key === 'growth_pct' && isTrue(r.display_on_site)) : null;
   const gel = document.getElementById('heroGrowth');
-  if (gel && growthRow) gel.textContent = '+' + growthRow.stat_value + '%';
+  if (gel && growthRow) gel.textContent = '+' + growthRow.stat_value;
 
   // Countdown to next event/deadline/scholarship
   if (!eventRows) return;
