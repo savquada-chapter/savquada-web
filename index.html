@@ -1643,6 +1643,15 @@ function renderHeroStats(statsRows, eventRows) {
     .sort((a,b) => a._d - b._d);
 
   console.log('[CMS] Today:', today.toString());
+  
+  // Debug each row's filter conditions
+  eventRows.forEach(r => {
+    if (r.date) {
+      const d = parseDate(r.date);
+      console.log('[CMS] Row:', r.title, '| display_on_site:', JSON.stringify(r.display_on_site), '| isTrue:', isTrue(r.display_on_site), '| category:', r.category, '| parsed date:', d, '| future:', d ? d >= today : 'n/a');
+    }
+  });
+
   console.log('[CMS] Upcoming count:', upcoming.length, upcoming.map(r => r.date + ' ' + r.title));
 
   const numEl  = document.getElementById('heroCountdownNum');
