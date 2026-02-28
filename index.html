@@ -1231,13 +1231,15 @@
   /* ── COUNTDOWN HERO STAT ── */
   .hero-stat--countdown { position: relative; }
   .hero-countdown-event {
-    font-size: 0.7rem;
+    font-size: 0.68rem;
     color: var(--gold-lt);
     letter-spacing: 0.06em;
     text-transform: uppercase;
-    margin-top: 4px;
+    margin-top: 6px;
     line-height: 1.3;
-    opacity: 0.85;
+    opacity: 0.9;
+    min-height: 1em;
+    display: block;
   }
 
   /* ── ANNOUNCE BAR OVERRIDE ── */
@@ -1642,18 +1644,6 @@ function renderHeroStats(statsRows, eventRows) {
     .filter(r => r._d && r._d >= today)
     .sort((a,b) => a._d - b._d);
 
-  console.log('[CMS] Today:', today.toString());
-  
-  // Debug each row's filter conditions
-  eventRows.forEach(r => {
-    if (r.date) {
-      const d = parseDate(r.date);
-      console.log('[CMS] Row:', r.title, '| display_on_site:', JSON.stringify(r.display_on_site), '| isTrue:', isTrue(r.display_on_site), '| category:', r.category, '| parsed date:', d, '| future:', d ? d >= today : 'n/a');
-    }
-  });
-
-  console.log('[CMS] Upcoming count:', upcoming.length, upcoming.map(r => r.date + ' ' + r.title));
-
   const numEl  = document.getElementById('heroCountdownNum');
   const lblEl  = document.getElementById('heroCountdownLbl');
   const evtEl  = document.getElementById('heroCountdownEvent');
@@ -1665,8 +1655,10 @@ function renderHeroStats(statsRows, eventRows) {
   const diffDays = Math.round(diffMs / (1000*60*60*24));
   const cat = (next.category||'Event').toUpperCase();
 
-  numEl.textContent = diffDays === 0 ? 'TODAY' : diffDays === 1 ? '1 DAY' : `${diffDays} DAYS`;
-  lblEl.textContent = cat === 'DEADLINE' ? 'Until Deadline' : cat === 'SCHOLARSHIP' ? 'Until Close' : 'Until Next Event';
+  numEl.textContent = diffDays === 0 ? 'TODAY' : diffDays;
+  lblEl.textContent = diffDays === 0
+    ? (cat === 'DEADLINE' ? 'Deadline Today' : cat === 'SCHOLARSHIP' ? 'Closes Today' : 'Event Today')
+    : (diffDays === 1 ? 'Day ' : 'Days ') + (cat === 'DEADLINE' ? 'Until Deadline' : cat === 'SCHOLARSHIP' ? 'Until Close' : 'Until Next Event');
   evtEl.textContent = next.title || '';
 }
 
@@ -1882,10 +1874,7 @@ function renderBoard(rows) {
   if (board)  renderBoard(board);
   if (awards) renderAwards(awards);
   if (stats)  renderStats(stats);
-  if (events) {
-    console.log('[CMS] Raw event dates:', events.map(r => r.date));
-    renderAnnounceBar(events);
-  }
+  if (events) renderAnnounceBar(events);
   renderHeroStats(stats, events);
   if (events) renderEvents(events);
 })();
