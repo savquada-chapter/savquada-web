@@ -1642,6 +1642,9 @@ function renderHeroStats(statsRows, eventRows) {
     .filter(r => r._d && r._d >= today)
     .sort((a,b) => a._d - b._d);
 
+  console.log('[CMS] Today:', today.toString());
+  console.log('[CMS] Upcoming count:', upcoming.length, upcoming.map(r => r.date + ' ' + r.title));
+
   const numEl  = document.getElementById('heroCountdownNum');
   const lblEl  = document.getElementById('heroCountdownLbl');
   const evtEl  = document.getElementById('heroCountdownEvent');
