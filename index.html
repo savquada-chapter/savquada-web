@@ -1228,6 +1228,25 @@
   }
 
 
+  /* ── COUNTDOWN HERO STAT ── */
+  .hero-stat--countdown { position: relative; }
+  .hero-countdown-event {
+    font-size: 0.7rem;
+    color: var(--gold-lt);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    margin-top: 4px;
+    line-height: 1.3;
+    opacity: 0.85;
+  }
+
+  /* ── ANNOUNCE BAR OVERRIDE ── */
+  #announceBar { cursor: default; }
+  #announceInner { animation: none; white-space: nowrap; overflow: hidden; }
+  .announce-rotating { display: flex; align-items: center; gap: 1.2rem; }
+  .announce-item { white-space: nowrap; flex-shrink: 0; }
+  .announce-sep { color: var(--gold); opacity: 0.6; }
+
   /* ── CMS STATES ── */
   .cms-loading, .cms-empty {
     padding: 2rem 1rem;
@@ -1273,24 +1292,9 @@
 </nav>
 
 <!-- ── ANNOUNCE BAR ── -->
-<div class="announce-bar">
-  <div class="announce-inner">
-    <strong>UPCOMING:</strong> Annual Awards Banquet · 22 March 2026 · Hunter AAF O-Club
-    <span class="dot">◆</span>
-    <strong>NOMINATIONS OPEN:</strong> Order of St. Michael — Gold Award · Deadline 28 Feb 2026
-    <span class="dot">◆</span>
-    <strong>NEW MEMBERS:</strong> Welcome CW3 Davis, CPT Nguyen, SFC Martinez · Jan 2026
-    <span class="dot">◆</span>
-    SAVANNAH SKIES Newsletter · Issue 003 · Now Available
-    <span class="dot">◆</span>
-    <strong>UPCOMING:</strong> Annual Awards Banquet · 22 March 2026 · Hunter AAF O-Club
-    <span class="dot">◆</span>
-    <strong>NOMINATIONS OPEN:</strong> Order of St. Michael — Gold Award · Deadline 28 Feb 2026
-    <span class="dot">◆</span>
-    <strong>NEW MEMBERS:</strong> Welcome CW3 Davis, CPT Nguyen, SFC Martinez · Jan 2026
-    <span class="dot">◆</span>
-    SAVANNAH SKIES Newsletter · Issue 003 · Now Available
-    <span class="dot">◆</span>
+<div class="announce-bar" id="announceBar">
+  <div class="announce-inner" id="announceInner">
+    <span id="announceText">Loading…</span>
   </div>
 </div>
 
@@ -1310,16 +1314,17 @@
 
   <div class="hero-aside">
     <div class="hero-stat">
-      <div class="hero-stat-num">87</div>
+      <div class="hero-stat-num" id="heroTotal">—</div>
       <div class="hero-stat-lbl">Active Members</div>
     </div>
     <div class="hero-stat">
-      <div class="hero-stat-num">14</div>
-      <div class="hero-stat-lbl">OSM Recipients</div>
+      <div class="hero-stat-num" id="heroGrowth">—</div>
+      <div class="hero-stat-lbl">12-Month Growth</div>
     </div>
-    <div class="hero-stat">
-      <div class="hero-stat-num">11</div>
-      <div class="hero-stat-lbl">Years Running</div>
+    <div class="hero-stat hero-stat--countdown">
+      <div class="hero-stat-num" id="heroCountdownNum">—</div>
+      <div class="hero-stat-lbl" id="heroCountdownLbl">Next Event</div>
+      <div class="hero-countdown-event" id="heroCountdownEvent"></div>
     </div>
   </div>
 </section>
@@ -1503,6 +1508,354 @@ if (hamburger && navLinks) {
    SAVQUADA CMS — Google Sheets Live Data
    Sheet ID: 1dtkxghIMc_pm52XoKYkWOg9gXPDKeLquP69r2sU3hxQ
    ════════════════════════════════════════════════════ */
+
+const SHEET_ID = '1dtkxghIMc_pm52XoKYkWOg9gXPDKeLquP69r2sU3hxQ';
+
+function sheetUrl(tab) {
+  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
+}
+
+/* ── CSV PARSER ── */
+function parseCSV(text) {
+  const rows = [];
+  let row = [], field = '', inQ = false;
+  for (let i = 0; i < text.length; i++) {
+    const c = text[i], n = text[i+1];
+    if (inQ) {
+      if (c === '"' && n === '"') { field += '"'; i++; }
+      else if (c === '"') { inQ = false; }
+      else { field += c; }
+    } else {
+      if (c === '"') { inQ = true; }
+      else if (c === ',') { row.push(field.trim()); field = ''; }
+      else if (c === '\n' || (c === '\r' && n === '\n')) {
+        row.push(field.trim()); rows.push(row); row = []; field = '';
+        if (c === '\r') i++;
+      } else { field += c; }
+    }
+  }
+  if (field || row.length) { row.push(field.trim()); rows.push(row); }
+  if (rows.length < 2) return [];
+  const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g,'_'));
+  return rows.slice(1).map(r => {
+    const obj = {};
+    headers.forEach((h, i) => { obj[h] = r[i] || ''; });
+    return obj;
+  });
+}
+
+async function fetchSheet(tab) {
+  try {
+    const res = await fetch(sheetUrl(tab));
+    if (!res.ok) throw new Error(`HTTP ${res.status}`);
+    const text = await res.text();
+    return parseCSV(text);
+  } catch(e) {
+    console.warn(`[CMS] Failed to load tab "${tab}":`, e);
+    return null;
+  }
+}
+
+function isTrue(val) {
+  return val && val.toString().toUpperCase() === 'TRUE';
+}
+
+const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
+const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+
+/* ────────────────────────────────────────────
+   ANNOUNCE BAR — rotates Announcement rows
+   ──────────────────────────────────────────── */
+function renderAnnounceBar(rows) {
+  const bar = document.getElementById('announceInner');
+  if (!bar) return;
+
+  const items = rows.filter(r =>
+    isTrue(r.display_on_site) &&
+    (r.category || '').toLowerCase() === 'announcement'
+  );
+
+  if (!items.length) {
+    bar.innerHTML = '<span>Savannah Chapter · AAAA · Hunter Army Airfield · Savannah, Georgia</span>';
+    return;
+  }
+
+  // Build scrolling ticker content — duplicate for seamless loop
+  const labelMap = { high: 'ALERT', normal: 'UPDATE' };
+  function itemHTML(r) {
+    const label = labelMap[(r.urgency||'normal').toLowerCase()] || 'UPDATE';
+    const link = r.rsvp_url && !r.rsvp_url.includes('[URL]') ? r.rsvp_url : null;
+    const text = r.title || '';
+    return link
+      ? `<span class="announce-item"><strong>${label}:</strong> <a href="${link}" style="color:inherit;text-decoration:underline;text-underline-offset:3px;">${text}</a></span>`
+      : `<span class="announce-item"><strong>${label}:</strong> ${text}</span>`;
+  }
+
+  const sep = ' <span class="announce-sep">◆</span> ';
+  const content = items.map(itemHTML).join(sep);
+  // Duplicate for seamless CSS scroll
+  bar.innerHTML = `<span style="display:inline-flex;gap:0;align-items:center;">${content}${sep}${content}${sep}</span>`;
+}
+
+/* ────────────────────────────────────────────
+   HERO STATS + COUNTDOWN
+   ──────────────────────────────────────────── */
+function renderHeroStats(statsRows, eventRows) {
+  // Total members
+  const totalRow = statsRows ? statsRows.find(r => r.stat_key === 'total_members' && isTrue(r.display_on_site)) : null;
+  const el = document.getElementById('heroTotal');
+  if (el && totalRow) el.textContent = totalRow.stat_value;
+
+  // 12-month growth
+  const growthRow = statsRows ? statsRows.find(r => r.stat_key === 'growth_12mo_pct' && isTrue(r.display_on_site)) : null;
+  const gel = document.getElementById('heroGrowth');
+  if (gel && growthRow) gel.textContent = '+' + growthRow.stat_value + '%';
+
+  // Countdown to next event/deadline/scholarship
+  if (!eventRows) return;
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const upcoming = eventRows
+    .filter(r => isTrue(r.display_on_site) && r.date && (r.category||'').toLowerCase() !== 'announcement')
+    .map(r => ({ ...r, _d: new Date(r.date) }))
+    .filter(r => !isNaN(r._d) && r._d >= today)
+    .sort((a,b) => a._d - b._d);
+
+  const numEl  = document.getElementById('heroCountdownNum');
+  const lblEl  = document.getElementById('heroCountdownLbl');
+  const evtEl  = document.getElementById('heroCountdownEvent');
+
+  if (!upcoming.length || !numEl) return;
+
+  const next = upcoming[0];
+  const diffMs   = next._d - today;
+  const diffDays = Math.round(diffMs / (1000*60*60*24));
+  const cat = (next.category||'Event').toUpperCase();
+
+  numEl.textContent = diffDays === 0 ? 'TODAY' : diffDays === 1 ? '1 DAY' : `${diffDays} DAYS`;
+  lblEl.textContent = cat === 'DEADLINE' ? 'Until Deadline' : cat === 'SCHOLARSHIP' ? 'Until Close' : 'Until Next Event';
+  evtEl.textContent = next.title || '';
+}
+
+/* ────────────────────────────────────────────
+   EVENTS GRID — all categories except Announcement
+   ──────────────────────────────────────────── */
+function renderEvents(rows) {
+  const grid = document.getElementById('eventsGrid');
+  if (!grid) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  const active = rows
+    .filter(r =>
+      isTrue(r.display_on_site) &&
+      (r.category||'').toLowerCase() !== 'announcement' &&
+      r.date
+    )
+    .map(r => ({ ...r, _d: new Date(r.date) }))
+    .filter(r => !isNaN(r._d) && r._d >= today)
+    .sort((a,b) => a._d - b._d);
+
+  if (!active.length) {
+    grid.innerHTML = '<div class="cms-empty">No upcoming events scheduled. Check back soon.</div>';
+    return;
+  }
+
+  // Badge config by category
+  const catBadge = {
+    'event':       { cls: 'badge-ceremony', label: null },
+    'deadline':    { cls: 'badge-training', label: 'Deadline' },
+    'scholarship': { cls: 'badge-social',   label: 'Scholarship' },
+  };
+
+  // Badge config by event_type fallback
+  const typeBadge = {
+    'awards': 'badge-ceremony', 'meeting': 'badge-ceremony',
+    'training': 'badge-training', 'professional dev': 'badge-training',
+    'social': 'badge-social', 'community': 'badge-social',
+    'deadline': 'badge-training', 'scholarship': 'badge-social',
+  };
+
+  grid.innerHTML = active.map((r, idx) => {
+    const d   = r._d;
+    const day = String(d.getDate()).padStart(2,'0');
+    const mon = MONTHS[d.getMonth()];
+    const yr  = d.getFullYear();
+
+    const cat = (r.category||'event').toLowerCase();
+    const cb  = catBadge[cat] || catBadge['event'];
+    const badgeCls   = cb.cls;
+    const badgeLabel = cb.label || r.event_type || 'Event';
+
+    const featured = (idx === 0 || isTrue(r.featured)) ? 'featured' : '';
+    const detail   = [r.time_start, r.location_name].filter(v => v && !v.includes('[VENUE]') && !v.includes('[URL]')).join(' · ');
+    const rsvpBtn  = r.rsvp_url && !r.rsvp_url.includes('[URL]')
+      ? `<a href="${r.rsvp_url}" class="leader-email" target="_blank">Details →</a>`
+      : `<div class="event-arrow">→</div>`;
+
+    return `
+    <div class="event-card ${featured}">
+      <div class="event-date-row">
+        <div class="event-day">${day}</div>
+        <div class="event-moy"><span>${mon}</span><span>${yr}</span></div>
+      </div>
+      <div class="event-badge ${badgeCls}">${badgeLabel}</div>
+      <div class="event-name">${r.title || '—'}</div>
+      ${detail ? `<div class="event-detail">${detail}</div>` : ''}
+      ${rsvpBtn}
+    </div>`;
+  }).join('');
+}
+
+/* ────────────────────────────────────────────
+   STATS — strength section
+   ──────────────────────────────────────────── */
+function renderStats(rows) {
+  function val(key) {
+    const r = rows.find(r => r.stat_key === key && isTrue(r.display_on_site));
+    return r ? r.stat_value : null;
+  }
+
+  const total = val('total_members');
+  const el = document.getElementById('statTotal');
+  if (el && total) el.textContent = total;
+
+  const sub = document.getElementById('statSub');
+  if (sub) sub.textContent = 'Serving active duty, reserve, guard, retired, civilian, and industry members across Coastal Georgia.';
+
+  const growth = val('growth_12mo_pct');
+  const growthEl = document.getElementById('statGrowthVal');
+  if (growthEl && growth) growthEl.textContent = '+' + growth + '%';
+
+  const acc = val('accurate_data');
+  const accEl = document.getElementById('statAccurate');
+  if (accEl && acc) accEl.textContent = acc;
+
+  const barKeys = [
+    { key: 'cat_army_active_duty',  label: 'Army Active Duty',  style: '' },
+    { key: 'cat_civilian',          label: 'Civilian',          style: 'gold' },
+    { key: 'cat_defense_industry',  label: 'Defense Industry',  style: 'dim' },
+    { key: 'cat_national_guard',    label: 'National Guard',    style: 'dim' },
+    { key: 'cat_air_force',         label: 'Air Force',         style: 'dim' },
+    { key: 'cat_student',           label: 'Student',           style: 'dim' },
+  ];
+
+  const totalNum = parseInt(total) || 1;
+  const panel = document.getElementById('barsPanel');
+  if (!panel) return;
+
+  let barsHTML = '';
+  barKeys.forEach(bk => {
+    const v = val(bk.key);
+    if (!v) return;
+    const num = parseInt(v);
+    const pct = Math.round((num / totalNum) * 100);
+    barsHTML += `
+    <div class="bar-row">
+      <div class="bar-head"><span class="bar-lbl">${bk.label}</span><span class="bar-val">${num}</span></div>
+      <div class="bar-track"><div class="bar-fill ${bk.style}" style="width:${pct}%"></div></div>
+    </div>`;
+  });
+
+  panel.innerHTML = barsHTML || '<div class="cms-empty">Membership breakdown unavailable.</div>';
+}
+
+/* ────────────────────────────────────────────
+   AWARDS
+   ──────────────────────────────────────────── */
+function renderAwards(rows) {
+  const tbody = document.getElementById('awardsBody');
+  if (!tbody) return;
+
+  const active = rows
+    .filter(r => isTrue(r.display_on_site))
+    .sort((a,b) => (parseInt(b.year)||0) - (parseInt(a.year)||0));
+
+  if (!active.length) {
+    tbody.innerHTML = '<tr><td colspan="4"><div class="cms-empty">Award records will appear here once published.</div></td></tr>';
+    return;
+  }
+
+  function badgeClass(type) {
+    const t = (type||'').toLowerCase();
+    if (t.includes('gold'))   return 'gold';
+    if (t.includes('silver')) return 'silver';
+    return 'dim';
+  }
+
+  tbody.innerHTML = active.map(r => {
+    const bc = badgeClass(r.award_type);
+    const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
+    return `
+    <tr>
+      <td><div class="award-yr">${r.year || '—'}</div></td>
+      <td><div class="award-nm">${r.recipient_name || '—'}</div>${rankUnit ? `<div class="award-rnk">${rankUnit}</div>` : ''}</td>
+      <td><span class="award-badge ${bc}">${r.award_type || '—'}</span></td>
+      <td><div class="award-unit">${r.unit || '—'}</div></td>
+    </tr>`;
+  }).join('');
+}
+
+/* ────────────────────────────────────────────
+   LEADERSHIP
+   ──────────────────────────────────────────── */
+function renderBoard(rows) {
+  const grid = document.getElementById('leadershipGrid');
+  if (!grid) return;
+
+  const active = rows
+    .filter(r => isTrue(r.active))
+    .sort((a,b) => (parseInt(a.sort_order)||99) - (parseInt(b.sort_order)||99));
+
+  if (!active.length) {
+    grid.innerHTML = '<div class="cms-empty">Leadership roster unavailable.</div>';
+    return;
+  }
+
+  grid.innerHTML = active.map((r, idx) => {
+    const nameParts = (r.display_name || '').split(' ').filter(Boolean);
+    const initials  = nameParts.length >= 2
+      ? nameParts[0][0] + nameParts[nameParts.length-1][0]
+      : (r.display_name||'??').slice(0,2);
+    const primary  = idx === 0 ? 'primary' : '';
+    const email    = r.chapter_email || r.personal_email || '';
+    const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
+    const emailBtn = email && !email.includes('[PENDING]')
+      ? `<a href="mailto:${email}" class="leader-email">${email} →</a>`
+      : '';
+    return `
+    <div class="leader-card ${primary}">
+      <div class="leader-avatar">${initials.toUpperCase()}</div>
+      <div class="leader-role">${r.position || '—'}</div>
+      <div class="leader-name">${r.display_name || '—'}</div>
+      <div class="leader-rank">${rankUnit}</div>
+      ${emailBtn}
+    </div>`;
+  }).join('');
+}
+
+/* ────────────────────────────────────────────
+   BOOT — fetch all 5 tabs in parallel
+   ──────────────────────────────────────────── */
+(async function initCMS() {
+  const [board, awards, stats, , events] = await Promise.all([
+    fetchSheet('Board'),
+    fetchSheet('OSM_Awards'),
+    fetchSheet('Stats'),
+    fetchSheet('Monthly_Trend'),
+    fetchSheet('Events'),
+  ]);
+
+  if (board)  renderBoard(board);
+  if (awards) renderAwards(awards);
+  if (stats)  renderStats(stats);
+  if (events) renderAnnounceBar(events);
+  renderHeroStats(stats, events);
+  if (events) renderEvents(events);
+})();
+</script>
+</body>
+</html>
 
 const SHEET_ID = '1dtkxghIMc_pm52XoKYkWOg9gXPDKeLquP69r2sU3hxQ';
 
