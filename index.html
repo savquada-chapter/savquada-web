@@ -1435,10 +1435,10 @@ function renderBoard(rows) {
     const emailBtn = email && !email.includes('[PENDING]')
       ? `<a href="mailto:${email}" class="leader-email">${email} →</a>` : '';
     const photoUrl = (r.photo_url || '').trim();
+    const ini = initials.toUpperCase();
     const avatar = photoUrl
-      ? `<img src="${photoUrl}" class="leader-avatar leader-avatar--photo" alt="${r.display_name || ''}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
-        + `<div class="leader-avatar" style="display:none">${initials.toUpperCase()}</div>`
-      : `<div class="leader-avatar">${initials.toUpperCase()}</div>`;
+      ? `<img src="${photoUrl}" class="leader-avatar leader-avatar--photo" alt="${r.display_name || ''}" onerror="this.outerHTML='<div class=\\'leader-avatar\\'>${ini}</div>'">`
+      : `<div class="leader-avatar">${ini}</div>`;
     return `
     <div class="leader-card ${primary}">
       ${avatar}
