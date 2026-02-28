@@ -1434,8 +1434,10 @@ function renderBoard(rows) {
     const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
     const emailBtn = email && !email.includes('[PENDING]')
       ? `<a href="mailto:${email}" class="leader-email">${email} →</a>` : '';
-    const avatar = r.photo_url
-      ? `<img src="${r.photo_url}" class="leader-avatar leader-avatar--photo" alt="${r.display_name || ''}">`
+    const photoUrl = (r.photo_url || '').trim();
+    const avatar = photoUrl
+      ? `<img src="${photoUrl}" class="leader-avatar leader-avatar--photo" alt="${r.display_name || ''}" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">`
+        + `<div class="leader-avatar" style="display:none">${initials.toUpperCase()}</div>`
       : `<div class="leader-avatar">${initials.toUpperCase()}</div>`;
     return `
     <div class="leader-card ${primary}">
