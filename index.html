@@ -355,8 +355,9 @@
     display: grid;
     grid-template-columns: repeat(3,1fr);
     gap: 2px;
-    background: var(--rule);
+    background: var(--white);
   }
+  .event-card:empty { display: none; }
 
   .event-card {
     background: var(--white);
@@ -664,7 +665,7 @@
     display: grid;
     grid-template-columns: repeat(4,1fr);
     gap: 2px;
-    background: var(--rule);
+    background: var(--off);
   }
 
   .leader-card {
@@ -676,11 +677,11 @@
   .leader-card:hover { background: var(--off); }
 
   .leader-card.primary {
-    background: var(--navy);
+    background: var(--white);
     border-top: 3px solid var(--gold);
   }
 
-  .leader-card.primary:hover { background: var(--navy-md); }
+  .leader-card.primary:hover { background: var(--off); }
 
   .leader-avatar {
     width: 48px; height: 48px;
@@ -696,9 +697,9 @@
   }
 
   .leader-card.primary .leader-avatar {
-    background: rgba(255,255,255,0.07);
-    border-color: rgba(184,137,42,0.28);
-    color: var(--gold-lt);
+    background: var(--mist);
+    border-color: var(--rule);
+    color: var(--navy-lt);
   }
 
   .leader-role {
@@ -720,7 +721,6 @@
   .leader-card.primary .leader-name { color: #fff; }
 
   .leader-rank { font-size: 12px; color: var(--ink-dim); margin-bottom: 14px; }
-  .leader-card.primary .leader-rank { color: rgba(255,255,255,0.40); }
 
   .leader-email {
     font-size: 11px;
@@ -735,8 +735,6 @@
   }
 
   .leader-email:hover { color: var(--navy); }
-  .leader-card.primary .leader-email { border-color: rgba(255,255,255,0.08); color: rgba(255,255,255,0.35); }
-  .leader-card.primary .leader-email:hover { color: var(--gold-lt); }
 
   /* ── NEWS ── */
   #news { background: var(--white); }
@@ -1750,7 +1748,7 @@ function renderStats(rows) {
 
   const growth = val('growth_pct');
   const growthEl = document.getElementById('statGrowthVal');
-  if (growthEl && growth) growthEl.textContent = '+' + growth + '%';
+  if (growthEl && growth) growthEl.textContent = growth;
 
   const acc = val('accurate_data');
   const accEl = document.getElementById('statAccurate');
@@ -1881,274 +1879,3 @@ function renderBoard(rows) {
 </script>
 </body>
 </html>
-
-const SHEET_ID = '1dtkxghIMc_pm52XoKYkWOg9gXPDKeLquP69r2sU3hxQ';
-
-function sheetUrl(tab) {
-  return `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:csv&sheet=${encodeURIComponent(tab)}`;
-}
-
-/* ── CSV PARSER ── handles quoted fields with commas/newlines */
-function parseCSV(text) {
-  const rows = [];
-  let row = [], field = '', inQ = false;
-  for (let i = 0; i < text.length; i++) {
-    const c = text[i], n = text[i+1];
-    if (inQ) {
-      if (c === '"' && n === '"') { field += '"'; i++; }
-      else if (c === '"') { inQ = false; }
-      else { field += c; }
-    } else {
-      if (c === '"') { inQ = true; }
-      else if (c === ',') { row.push(field.trim()); field = ''; }
-      else if (c === '\n' || (c === '\r' && n === '\n')) {
-        row.push(field.trim()); rows.push(row); row = []; field = '';
-        if (c === '\r') i++;
-      } else { field += c; }
-    }
-  }
-  if (field || row.length) { row.push(field.trim()); rows.push(row); }
-  // Convert to array of objects using first row as headers
-  if (rows.length < 2) return [];
-  const headers = rows[0].map(h => h.toLowerCase().replace(/\s+/g,'_'));
-  return rows.slice(1).map(r => {
-    const obj = {};
-    headers.forEach((h, i) => { obj[h] = r[i] || ''; });
-    return obj;
-  });
-}
-
-async function fetchSheet(tab) {
-  try {
-    const res = await fetch(sheetUrl(tab));
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const text = await res.text();
-    return parseCSV(text);
-  } catch(e) {
-    console.warn(`[CMS] Failed to load tab "${tab}":`, e);
-    return null;
-  }
-}
-
-function isTrue(val) {
-  return val && val.toString().toUpperCase() === 'TRUE';
-}
-
-/* ── MONTH ABBREVS ── */
-const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
-
-/* ────────────────────────────────────────────
-   EVENTS
-   ──────────────────────────────────────────── */
-function renderEvents(rows) {
-  const grid = document.getElementById('eventsGrid');
-  if (!grid) return;
-
-  const today = new Date(); today.setHours(0,0,0,0);
-
-  const active = rows
-    .filter(r => isTrue(r.display_on_site) && r.date)
-    .map(r => ({ ...r, _d: new Date(r.date) }))
-    .filter(r => !isNaN(r._d) && r._d >= today)
-    .sort((a,b) => a._d - b._d);
-
-  if (!active.length) {
-    grid.innerHTML = '<div class="cms-empty">No upcoming events scheduled. Check back soon.</div>';
-    return;
-  }
-
-  // Badge class mapping
-  const badgeMap = {
-    'award ceremony': 'badge-ceremony', 'awards': 'badge-ceremony',
-    'meeting': 'badge-ceremony',
-    'training': 'badge-training', 'professional dev': 'badge-training', 'professional development': 'badge-training',
-    'social': 'badge-social', 'community': 'badge-social',
-  };
-
-  function badgeClass(type) {
-    const t = (type||'').toLowerCase();
-    for (const key in badgeMap) { if (t.includes(key)) return badgeMap[key]; }
-    return 'badge-ceremony';
-  }
-
-  grid.innerHTML = active.map((r, idx) => {
-    const d = r._d;
-    const day  = String(d.getDate()).padStart(2,'0');
-    const mon  = MONTHS[d.getMonth()];
-    const yr   = d.getFullYear();
-    const featured = idx === 0 || isTrue(r.featured) ? 'featured' : '';
-    const badge = badgeClass(r.event_type);
-    const label = r.event_type || 'Event';
-    const detail = [r.time_start, r.location_name].filter(Boolean).join(' · ');
-    const rsvpBtn = r.rsvp_url ? `<a href="${r.rsvp_url}" class="leader-email" target="_blank">RSVP →</a>` : `<div class="event-arrow">→</div>`;
-    return `
-    <div class="event-card ${featured}">
-      <div class="event-date-row">
-        <div class="event-day">${day}</div>
-        <div class="event-moy"><span>${mon}</span><span>${yr}</span></div>
-      </div>
-      <div class="event-badge ${badge}">${label}</div>
-      <div class="event-name">${r.title || '—'}</div>
-      ${detail ? `<div class="event-detail">${detail}</div>` : ''}
-      ${rsvpBtn}
-    </div>`;
-  }).join('');
-}
-
-/* ────────────────────────────────────────────
-   STATS (strength section)
-   ──────────────────────────────────────────── */
-function renderStats(rows) {
-  // Key lookup helper
-  function val(key) {
-    const r = rows.find(r => r.stat_key === key && isTrue(r.display_on_site));
-    return r ? r.stat_value : null;
-  }
-  function label(key) {
-    const r = rows.find(r => r.stat_key === key);
-    return r ? r.stat_label : key;
-  }
-
-  // Hero number — total members
-  const total = val('total_members');
-  if (total) {
-    const el = document.getElementById('statTotal');
-    if (el) el.textContent = total;
-  }
-
-  // Sub text
-  const sub = document.getElementById('statSub');
-  if (sub) sub.textContent = 'Serving active duty, reserve, guard, retired, civilian, and industry members across Coastal Georgia.';
-
-  // KPI: growth
-  const growth = val('growth_pct');
-  const growthEl = document.getElementById('statGrowthVal');
-  if (growthEl && growth) growthEl.textContent = growth + '%';
-
-  // KPI: accurate data
-  const acc = val('accurate_data');
-  const accEl = document.getElementById('statAccurate');
-  if (accEl && acc) accEl.textContent = acc;
-
-  // Bars panel — category breakdown keys in order
-  const barKeys = [
-    { key: 'cat_army_active_duty',  label: 'Army Active Duty',      style: '' },
-    { key: 'cat_civilian',          label: 'Civilian',               style: 'gold' },
-    { key: 'cat_defense_industry',  label: 'Defense Industry',       style: 'dim' },
-    { key: 'cat_national_guard',    label: 'National Guard',         style: 'dim' },
-    { key: 'cat_air_force',         label: 'Air Force',              style: 'dim' },
-    { key: 'cat_student',           label: 'Student',                style: 'dim' },
-  ];
-
-  const totalNum = parseInt(total) || 1;
-  const panel = document.getElementById('barsPanel');
-  if (!panel) return;
-
-  let barsHTML = '';
-  barKeys.forEach(bk => {
-    const v = val(bk.key);
-    if (!v) return;
-    const num = parseInt(v);
-    const pct = Math.round((num / totalNum) * 100);
-    barsHTML += `
-    <div class="bar-row">
-      <div class="bar-head"><span class="bar-lbl">${bk.label}</span><span class="bar-val">${num}</span></div>
-      <div class="bar-track"><div class="bar-fill ${bk.style}" style="width:${pct}%"></div></div>
-    </div>`;
-  });
-
-  panel.innerHTML = barsHTML || '<div class="cms-empty">Membership breakdown unavailable.</div>';
-}
-
-/* ────────────────────────────────────────────
-   AWARDS
-   ──────────────────────────────────────────── */
-function renderAwards(rows) {
-  const tbody = document.getElementById('awardsBody');
-  if (!tbody) return;
-
-  const active = rows
-    .filter(r => isTrue(r.display_on_site))
-    .sort((a,b) => (parseInt(b.year)||0) - (parseInt(a.year)||0));
-
-  if (!active.length) {
-    tbody.innerHTML = '<tr><td colspan="4"><div class="cms-empty">Award records will appear here once published.</div></td></tr>';
-    return;
-  }
-
-  function badgeClass(type) {
-    const t = (type||'').toLowerCase();
-    if (t.includes('gold'))   return 'gold';
-    if (t.includes('silver')) return 'silver';
-    if (t.includes('bronze')) return 'dim';
-    return 'dim';
-  }
-
-  tbody.innerHTML = active.map(r => {
-    const bc = badgeClass(r.award_type);
-    const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
-    return `
-    <tr>
-      <td><div class="award-yr">${r.year || '—'}</div></td>
-      <td><div class="award-nm">${r.recipient_name || '—'}</div>${rankUnit ? `<div class="award-rnk">${rankUnit}</div>` : ''}</td>
-      <td><span class="award-badge ${bc}">${r.award_type || '—'}</span></td>
-      <td><div class="award-unit">${r.unit || '—'}</div></td>
-    </tr>`;
-  }).join('');
-}
-
-/* ────────────────────────────────────────────
-   LEADERSHIP / BOARD
-   ──────────────────────────────────────────── */
-function renderBoard(rows) {
-  const grid = document.getElementById('leadershipGrid');
-  if (!grid) return;
-
-  const active = rows
-    .filter(r => isTrue(r.active))
-    .sort((a,b) => (parseInt(a.sort_order)||99) - (parseInt(b.sort_order)||99));
-
-  if (!active.length) {
-    grid.innerHTML = '<div class="cms-empty">Leadership roster unavailable.</div>';
-    return;
-  }
-
-  grid.innerHTML = active.map((r, idx) => {
-    // Initials from display_name
-    const nameParts = (r.display_name || '').split(' ').filter(Boolean);
-    const initials  = nameParts.length >= 2
-      ? nameParts[0][0] + nameParts[nameParts.length-1][0]
-      : (r.display_name||'??').slice(0,2);
-    const primary  = idx === 0 ? 'primary' : '';
-    const email    = r.chapter_email || r.personal_email || '';
-    const rankUnit = [r.rank, r.unit].filter(Boolean).join(' · ');
-    const emailBtn = email && !email.includes('[PENDING]')
-      ? `<a href="/cdn-cgi/l/email-protection#10346b757d71797c6d" class="leader-email">${email} →</a>`
-      : '';
-    return `
-    <div class="leader-card ${primary}">
-      <div class="leader-avatar">${initials.toUpperCase()}</div>
-      <div class="leader-role">${r.position || '—'}</div>
-      <div class="leader-name">${r.display_name || '—'}</div>
-      <div class="leader-rank">${rankUnit}</div>
-      ${emailBtn}
-    </div>`;
-  }).join('');
-}
-
-/* ────────────────────────────────────────────
-   BOOT — fetch all 5 tabs in parallel
-   ──────────────────────────────────────────── */
-(async function initCMS() {
-  const [board, awards, stats, , events] = await Promise.all([
-    fetchSheet('Board'),
-    fetchSheet('OSM_Awards'),
-    fetchSheet('Stats'),
-    fetchSheet('Monthly_Trend'),   // reserved for future chart
-    fetchSheet('Events'),
-  ]);
-
-  if (board)  renderBoard(board);
-  if (awards) renderAwards(awards);
-  if (stats)  renderStats(stats);
-  if (events) renderEvents(events);
