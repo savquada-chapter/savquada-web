@@ -1744,7 +1744,7 @@ function renderStats(rows) {
   const sub = document.getElementById('statSub');
   if (sub) sub.textContent = 'Serving active duty, reserve, guard, retired, civilian, and industry members across Coastal Georgia.';
 
-  const growth = val('growth_12mo_pct');
+  const growth = val('growth_pct');
   const growthEl = document.getElementById('statGrowthVal');
   if (growthEl && growth) growthEl.textContent = '+' + growth + '%';
 
@@ -2020,7 +2020,7 @@ function renderStats(rows) {
   if (sub) sub.textContent = 'Serving active duty, reserve, guard, retired, civilian, and industry members across Coastal Georgia.';
 
   // KPI: growth
-  const growth = val('growth_12mo_pct');
+  const growth = val('growth_pct');
   const growthEl = document.getElementById('statGrowthVal');
   if (growthEl && growth) growthEl.textContent = growth + '%';
 
