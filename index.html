@@ -1563,6 +1563,21 @@ function isTrue(val) {
 const MONTHS = ['JAN','FEB','MAR','APR','MAY','JUN','JUL','AUG','SEP','OCT','NOV','DEC'];
 const MONTHS_LONG = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 
+function parseDate(str) {
+  if (!str) return null;
+  // Handle M/D/YYYY or MM/DD/YYYY (Google Sheets default export)
+  const slashMatch = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
+  if (slashMatch) {
+    return new Date(parseInt(slashMatch[3]), parseInt(slashMatch[1])-1, parseInt(slashMatch[2]));
+  }
+  // Handle YYYY-MM-DD (ISO)
+  const dashMatch = str.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+  if (dashMatch) {
+    return new Date(parseInt(dashMatch[1]), parseInt(dashMatch[2])-1, parseInt(dashMatch[3]));
+  }
+  return null;
+}
+
 /* ────────────────────────────────────────────
    ANNOUNCE BAR — rotates Announcement rows
    ──────────────────────────────────────────── */
@@ -1617,8 +1632,8 @@ function renderHeroStats(statsRows, eventRows) {
 
   const upcoming = eventRows
     .filter(r => isTrue(r.display_on_site) && r.date && (r.category||'').toLowerCase() !== 'announcement')
-    .map(r => ({ ...r, _d: new Date(r.date) }))
-    .filter(r => !isNaN(r._d) && r._d >= today)
+    .map(r => ({ ...r, _d: parseDate(r.date) }))
+    .filter(r => r._d && r._d >= today)
     .sort((a,b) => a._d - b._d);
 
   const numEl  = document.getElementById('heroCountdownNum');
@@ -1652,8 +1667,8 @@ function renderEvents(rows) {
       (r.category||'').toLowerCase() !== 'announcement' &&
       r.date
     )
-    .map(r => ({ ...r, _d: new Date(r.date) }))
-    .filter(r => !isNaN(r._d) && r._d >= today)
+    .map(r => ({ ...r, _d: parseDate(r.date) }))
+    .filter(r => r._d && r._d >= today)
     .sort((a,b) => a._d - b._d);
 
   if (!active.length) {
