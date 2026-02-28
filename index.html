@@ -955,9 +955,9 @@ footer {
       <div class="hero-stat-lbl">12‑Month Growth</div>
     </div>
     <div class="hero-stat hero-stat--countdown">
-      <div class="hero-stat-num" id="heroCountdownNum">—</div>
-      <div class="hero-stat-lbl" id="heroCountdownLbl">Next Event</div>
-      <div class="hero-countdown-event" id="heroCountdownEvent"></div>
+      <div class="hero-stat-num" id="heroChapterClass">—</div>
+      <div class="hero-stat-lbl">Chapter Classification</div>
+      <div class="hero-countdown-event" id="heroSuperGap"></div>
     </div>
   </div>
 </section>
@@ -1219,46 +1219,30 @@ function renderHeroStats(statsRows, eventsRows) {
     }
   }
 
-  // Countdown
-  const numEl = document.getElementById('heroCountdownNum');
-  const lblEl = document.getElementById('heroCountdownLbl');
-  const evtEl = document.getElementById('heroCountdownEvent');
+  // Chapter Classification
+  const classEl = document.getElementById('heroChapterClass');
+  const gapEl   = document.getElementById('heroSuperGap');
+  if (classEl && statsRows) {
+    const row    = statsRows.find(r => r.stat_key === 'total_members');
+    const count  = row ? parseInt(row.stat_value) || 0 : 0;
 
-  if (!numEl || !eventsRows) return;
+    let classification;
+    if      (count >= 500) classification = 'Super';
+    else if (count >= 150) classification = 'Master';
+    else if (count >= 75)  classification = 'Senior';
+    else                   classification = 'AAAA';
 
-  const today = new Date();
-  today.setHours(0,0,0,0);
+    classEl.textContent = classification;
 
-  const upcoming = eventsRows
-    .filter(r => {
-      const cat = (r.category || '').toLowerCase();
-      return cat !== 'announcement' && isTrue(r.display_on_site);
-    })
-    .map(r => ({ ...r, _d: parseDate(r.date) }))
-    .filter(r => r._d && r._d >= today)
-    .sort((a,b) => a._d - b._d);
-
-  if (!upcoming.length) {
-    numEl.textContent = '—';
-    lblEl.textContent = 'No Upcoming Events';
-    return;
+    if (gapEl) {
+      if (count >= 500) {
+        gapEl.textContent = 'Super Chapter — Top Tier';
+      } else {
+        const gap = 500 - count;
+        gapEl.textContent = `${gap} members to Super Chapter`;
+      }
+    }
   }
-
-  const next = upcoming[0];
-  const diff = Math.round((next._d - today) / 86400000);
-
-  if (diff === 0) {
-    numEl.textContent = 'TODAY';
-    lblEl.textContent = 'Event Day';
-  } else if (diff === 1) {
-    numEl.textContent = '1';
-    lblEl.textContent = 'Day Until ' + (next.category || 'Event');
-  } else {
-    numEl.textContent = diff;
-    lblEl.textContent = 'Days Until ' + (next.category || 'Event');
-  }
-
-  if (evtEl) evtEl.textContent = next.title || '';
 }
 
 /* ══════════════════════════════════════════════
@@ -1563,7 +1547,7 @@ function handleNewsletterSubmit(e) {
   if (awards)     renderAwards(awards);
   if (stats)      renderStats(stats);
   if (events)     renderEvents(events);
-  if (events)     renderHeroStats(stats, events);
+  renderHeroStats(stats);
   renderNews(news);
   renderVolunteers(volunteers);
 })();
